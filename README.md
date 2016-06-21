@@ -10,4 +10,4 @@ Example:
 
 `@tabdtl.sql airp system_instance_parameter`
 
-This script was copied from somewhere on the internet many years ago, possibly inspired by Informix DBINFO...
+See also [dba_table_info.sql](http://www.idevelopment.info/data/Oracle/DBA_scripts/Database_Administration/dba_table_info.sql) or [tableinfo.sql](https://github.com/geekcomputers/Oracle-SQL/blob/master/tableinfo.sql), one of whom is probably the original author. 
