@@ -1,0 +1,44 @@
+#!/usr/bin/bash
+# Batch Script test tool: 'find_job'
+# Finds recent job_request records matching <pattern>
+#set -x
+USAGE="find_job <job_name_pattern>"
+[ $1 ] || { echo $USAGE; exit 1;}
+JOBNAME=`echo $1|tr '[A-Z]' '[a-z]'`
+
+sqlplus -s /@${ORACLE_SID}_${LOGNAME} << EOF
+  whenever sqlerror exit sqlcode;
+  set linesize 180
+  column runtime format A12;
+  column user_name format A9;
+  column job_owner format A9;
+  column queue_no format 99;
+  column job_number format 9999999;
+  column param_1 format A44;
+  column param_2 format A10;
+  column param_3 format A10;
+  column job_status format A10;
+  column started format A12;
+  column finished format A12;
+
+  select --HH:MI runtime
+         (case when j.job_status = 'RUNNING'
+               then to_char(to_date('00:00:00','HH24:MI:SS')+(sysdate-j.started),'HH24:MI:SS')
+               else to_char(to_date('00:00:00','HH24:MI:SS')+(nvl(j.finished,nvl(date_modified,sysdate))-j.started),'HH24:MI:SS')
+               end)
+         || --append this, if runtime is longer than 1 day
+         (case when trunc(nvl(j.finished,date_modified)-j.started) > 0
+               then '+'||trunc(nvl(j.finished,date_modified)-j.started)||'d'
+               else null
+               end)  RUNTIME
+        , job_number, job_name, user_name, job_status
+        , to_char(started,'DD-MON HH24:MI') started
+        , to_char(finished,'DD-MON HH24:MI') finished
+        , queue_no, param_1
+  from   job_requests j
+  where  j.date_created >= trunc(sysdate) - 45
+  and    lower(j.job_name) like '%${JOBNAME}%'
+  order by j.started;
+  --order by j.job_number;
+EXIT;
+EOF`
